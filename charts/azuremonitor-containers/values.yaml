@@ -57,6 +57,7 @@ omsagent:
     ## Applicable for only managed clusters hosted in Azure
     clusterId: <your_cluster_id>
     clusterRegion: <your_cluster_region>
+    gigendpoint: <your_gig_endpoint>
   rbac: true
   sidecarscraping: true
   logsettings:
