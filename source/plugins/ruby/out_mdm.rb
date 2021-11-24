@@ -100,12 +100,58 @@ module Fluent::Plugin
           if aks_resource_id.downcase.include?("microsoft.kubernetes/connectedclusters")
             @isArcK8sCluster = true
           end
+          if !gig_endpoint.to_s.empty?
+            @isArcK8sCluster = true
+          end
           @@post_request_url = @@post_request_url_template % { aks_region: aks_region, aks_resource_id: aks_resource_id, gig_endpoint: gig_endpoint }
           @post_request_uri = URI.parse(@@post_request_url)
-          @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
+          if (!!@isArcK8sCluster)
+            proxy = (ProxyUtils.getProxyConfiguration)
+            if proxy.nil? || proxy.empty?
+              @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
+            else
+              @log.info "Proxy configured on this cluster: #{aks_resource_id}"
+              @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port, proxy[:addr], proxy[:port], proxy[:user], proxy[:pass])
+            end
+          else
+            @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
+          end
           @http_client.use_ssl = false
           @log.info "POST Request url: #{@@post_request_url}"
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMPluginStart", {})
+
+          # arc k8s cluster uses cluster identity
+          if (!!@isArcK8sCluster)
+            @log.info "using cluster identity token since cluster is azure arc k8s cluster"
+            @cluster_identity = ArcK8sClusterIdentity.new
+            @cached_access_token = @cluster_identity.get_cluster_identity_token
+          else
+            # azure json file only used for aks and doesnt exist in non-azure envs
+            file = File.read(@@azure_json_path)
+            @data_hash = JSON.parse(file)
+            # Check to see if SP exists, if it does use SP. Else, use msi
+            sp_client_id = @data_hash["aadClientId"]
+            sp_client_secret = @data_hash["aadClientSecret"]
+
+            if (!sp_client_id.nil? && !sp_client_id.empty? && sp_client_id.downcase != "msi")
+              @useMsi = false
+              aad_token_url = @@aad_token_url_template % { tenant_id: @data_hash["tenantId"] }
+              @parsed_token_uri = URI.parse(aad_token_url)
+            else
+              @useMsi = true
+              if !@@user_assigned_client_id.nil? && !@@user_assigned_client_id.empty?
+                msi_endpoint = @@msi_endpoint_template % { user_assigned_client_id: @@user_assigned_client_id, resource: @@token_resource_url }
+              else
+                # in case of aad msi auth user_assigned_client_id will be empty
+                @log.info "using aad msi auth"
+                @isAADMSIAuth = true
+                msi_endpoint = @@imds_msi_endpoint_template % { resource: @@token_resource_audience }
+              end
+              @parsed_token_uri = URI.parse(msi_endpoint)
+            end
+
+            @cached_access_token = get_access_token
+          end
         end
       rescue => e
         @log.info "exception when initializing out_mdm #{e}"
@@ -124,7 +170,14 @@ module Fluent::Plugin
             @log.info "Refreshing access token for out_mdm plugin.."
 
             if (!!@useMsi)
-              ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMToken-MSI", {})
+              properties = {}
+              if (!!@isAADMSIAuth)
+                @log.info "Using aad msi auth to get the token to post MDM data"
+                properties["aadAuthMSIMode"] = "true"
+              else
+                @log.info "Using msi to get the token to post MDM data"
+              end
+              ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMToken-MSI", properties)
               @log.info "Opening TCP connection"
               http_access_token = Net::HTTP.start(@parsed_token_uri.host, @parsed_token_uri.port, :use_ssl => false)
               # http_access_token.use_ssl = false
@@ -244,6 +297,7 @@ module Fluent::Plugin
         flush_mdm_exception_telemetry
         if (!@first_post_attempt_made || (Time.now > @last_post_attempt_time + retry_mdm_post_wait_minutes * 60)) && @can_send_data_to_mdm
           post_body = []
+          chunk.extend Fluent::ChunkMessagePackEventStreamer
           chunk.msgpack_each { |(tag, record)|
             post_body.push(record.to_json)
           }
@@ -273,8 +327,17 @@ module Fluent::Plugin
 
     def send_to_mdm(post_body)
       begin
+        if (!!@isArcK8sCluster)
+          if @cluster_identity.nil?
+            @cluster_identity = ArcK8sClusterIdentity.new
+          end
+          access_token = @cluster_identity.get_cluster_identity_token
+        else
+          access_token = get_access_token
+        end
         request = Net::HTTP::Post.new(@post_request_uri.request_uri)
         request["Content-Type"] = "application/x-ndjson"
+        request["Authorization"] = "Bearer #{access_token}"
 
         request.body = post_body.join("\n")
         @log.info "REQUEST BODY SIZE #{request.body.bytesize / 1024}"
