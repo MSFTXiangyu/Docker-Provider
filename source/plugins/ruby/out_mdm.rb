@@ -89,6 +89,11 @@ module Fluent::Plugin
           aks_region = aks_region.gsub(" ", "")
         end
 
+        if !gig_endpoint.to_s.empty?
+          @log.info "Environment Variable GIG_Endpoint is set. Will send data to MDM.. "
+          @can_send_data_to_mdm = true
+        end
+
         if @can_send_data_to_mdm
           @log.info "MDM Metrics supported in #{aks_region} region"
 
