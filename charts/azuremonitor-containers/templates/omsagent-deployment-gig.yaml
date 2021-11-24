@@ -37,7 +37,7 @@ spec:
        {{- if  eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
        image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
        {{- else if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>"}}
-       image: xikuantest.azurecr.io/azmonext:test1
+       image: xikuantest.azurecr.io/azmonext:test2
        {{- else }}
        image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
        {{- end }}
