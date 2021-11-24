@@ -337,7 +337,6 @@ module Fluent::Plugin
         end
         request = Net::HTTP::Post.new(@post_request_uri.request_uri)
         request["Content-Type"] = "application/x-ndjson"
-        request["Authorization"] = "Bearer #{access_token}"
 
         request.body = post_body.join("\n")
         @log.info "REQUEST BODY SIZE #{request.body.bytesize / 1024}"
