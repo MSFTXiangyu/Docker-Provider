@@ -20,8 +20,8 @@ Azure:
     proxyCert: ""
 omsagent:
   image:
-    repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod10132021"
+    repo: "xikuantest.azurecr.io/azmonext"
+    tag: "test5"
     tagWindows: "win-ciprod10132021"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "16.0.0-0"
