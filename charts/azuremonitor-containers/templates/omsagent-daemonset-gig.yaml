@@ -38,10 +38,10 @@ spec:
    {{- end }}
    containers:
      - name: omsagent
-       {{- if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
+       {{- if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>"}}
+       image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
+       {{- else if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
        image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
-       {{- else if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>"}}
-       image: xikuantest.azurecr.io/azmonext:test3
        {{- else }}
        image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
        {{- end }}
@@ -140,10 +140,10 @@ spec:
         timeoutSeconds: 15
    {{- if .Values.omsagent.sidecarscraping }}
      - name: omsagent-prometheus
-       {{- if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
+       {{- if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>"}}
+       image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
+       {{- else if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
        image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
-       {{- else if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>"}}
-       image: xikuantest.azurecr.io/azmonext:test3
        {{- else }}
        image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
        {{- end }}
