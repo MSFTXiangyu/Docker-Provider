@@ -15,11 +15,11 @@ spec:
   type: RollingUpdate
  selector:
    matchLabels:
-     dsName: "omsagent-ds"
+     dsName: "omsagent-ds-gig"
  template:
   metadata:
    labels:
-    dsName: "omsagent-ds"
+    dsName: "omsagent-ds-gig"
    annotations:
     agentVersion: {{ .Values.omsagent.image.tag }}
     dockerProviderVersion: {{ .Values.omsagent.image.dockerProviderVersion }}

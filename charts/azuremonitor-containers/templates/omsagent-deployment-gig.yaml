@@ -14,13 +14,13 @@ spec:
  replicas: 1
  selector:
   matchLabels:
-   rsName: "omsagent-rs"
+   rsName: "omsagent-rs-gig"
  strategy:
   type: RollingUpdate
  template:
   metadata:
    labels:
-    rsName: "omsagent-rs"
+    rsName: "omsagent-rs-gig"
    annotations:
     agentVersion: {{ .Values.omsagent.image.tag }}
     dockerProviderVersion: {{ .Values.omsagent.image.dockerProviderVersion }}
