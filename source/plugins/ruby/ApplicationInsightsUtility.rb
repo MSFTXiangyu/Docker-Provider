@@ -307,8 +307,6 @@ class ApplicationInsightsUtility
           workspaceCloud = "AzureUSGovernment"
         elsif workspaceDomain.casecmp("opinsights.azure.de") == 0
           workspaceCloud = "AzureGermanCloud"
-        else
-          workspaceCloud = "Unknown"
         end
         return workspaceCloud
       rescue => errorStr
