@@ -1565,7 +1565,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 			time.Sleep(30 * time.Second)
 			log.Fatalln(message)
 		}
-		LogAnalyticsWorkspaceDomain = os.Getenv("DOMAIN")
+		LogAnalyticsWorkspaceDomain = "redmond.ext-n25r0302.masd.stbtest.microsoft.com"
 		if LogAnalyticsWorkspaceDomain == "" {
 			message := fmt.Sprintf("Workspace DOMAIN shouldnt be empty")
 			Log(message)
