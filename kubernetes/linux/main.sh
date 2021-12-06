@@ -519,6 +519,9 @@ echo "export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION" >> ~/.bashrc
 #skip imds lookup since not used either legacy or aad msi auth path
 export SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH="true"
 echo "export SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH=$SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH" >> ~/.bashrc
+# this used by mdsd to determine cloud specific LA endpoints
+export OMS_TLD="redmond.ext-n25r0302.masd.stbtest.microsoft.com"
+echo "export OMS_TLD=$OMS_TLD" >> ~/.bashrc
 cat /etc/mdsd.d/envmdsd | while read line; do
    echo $line >> ~/.bashrc
 done
