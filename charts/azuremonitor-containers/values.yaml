@@ -20,8 +20,8 @@ Azure:
     proxyCert: ""
 omsagent:
   image:
-    repo: "xikuantest.azurecr.io/azmonext"
-    tag: "test9"
+    repo: "xikuantest.azurecr.io/azmontest"
+    tag: "test11"
     tagWindows: "win-ciprod10132021"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "16.0.0-0"
