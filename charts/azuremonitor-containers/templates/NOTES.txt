@@ -45,7 +45,7 @@ Proceed to below link to view health and monitoring data of your clusters
 - Azure US Government Cloud Portal URL: https://aka.ms/azmon-containers-fairfax
 {{- else }}
 ########################################################################################
-####   ERROR: Provided omsagent.domain value either invalid or not supported        ####
+####   Info: Use provided omsagent.domain.   ####
 ########################################################################################
 {{- end }}
 {{- end }}

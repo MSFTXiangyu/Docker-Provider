@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
- name: omsagent
+ name: omsagent-gig
  namespace: kube-system
  labels:
    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -15,11 +15,11 @@ spec:
   type: RollingUpdate
  selector:
    matchLabels:
-     dsName: "omsagent-ds"
+     dsName: "omsagent-ds-gig"
  template:
   metadata:
    labels:
-    dsName: "omsagent-ds"
+    dsName: "omsagent-ds-gig"
    annotations:
     agentVersion: {{ .Values.omsagent.image.agentVersion }}
     dockerProviderVersion: {{ .Values.omsagent.image.dockerProviderVersion }}
@@ -48,7 +48,9 @@ spec:
 {{-  .Values.Azure.Identity.MSIAdapterYaml | nindent 7 }}
 {{- end }}
      - name: omsagent
-       {{- if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
+       {{- if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>"}}
+       image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
+       {{- else if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
        image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
        {{- else }}
        image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
@@ -57,6 +59,10 @@ spec:
        resources:
 {{ toYaml .Values.omsagent.resources.daemonsetlinux | indent 9 }}
        env:
+       {{- if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>" }}
+       - name: GIG_ENDPOINT
+         value: {{ .Values.omsagent.env.gigendpoint | quote }}
+       {{ end }}
        {{- if ne .Values.omsagent.env.clusterId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.omsagent.env.clusterId | quote }}
@@ -149,18 +155,11 @@ spec:
         - mountPath: /etc/config/settings/adx
           name: omsagent-adx-secret
           readOnly: true
-       livenessProbe:
-        exec:
-         command:
-         - /bin/bash
-         - -c
-         - "/opt/livenessprobe.sh"
-        initialDelaySeconds: 60
-        periodSeconds: 60
-        timeoutSeconds: 15
    {{- if .Values.omsagent.sidecarscraping }}
      - name: omsagent-prometheus
-       {{- if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
+       {{- if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>"}}
+       image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
+       {{- else if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
        image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
        {{- else }}
        image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
@@ -219,15 +218,6 @@ spec:
          - mountPath: /etc/config/osm-settings
            name: osm-settings-vol-config
            readOnly: true
-       livenessProbe:
-         exec:
-           command:
-             - /bin/bash
-             - -c
-             - /opt/livenessprobe.sh
-         initialDelaySeconds: 60
-         periodSeconds: 60
-         timeoutSeconds: 15
    {{- end }}
    {{- with .Values.omsagent.daemonset.affinity }}
    affinity: {{- toYaml . | nindent 8 }}
