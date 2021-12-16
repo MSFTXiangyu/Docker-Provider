@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
- name: omsagent
+ name: omsagent-gig
  namespace: kube-system
  labels:
    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -15,11 +15,11 @@ spec:
   type: RollingUpdate
  selector:
    matchLabels:
-     dsName: "omsagent-ds"
+     dsName: "omsagent-ds-gig"
  template:
   metadata:
    labels:
-    dsName: "omsagent-ds"
+    dsName: "omsagent-ds-gig"
    annotations:
     agentVersion: {{ .Values.omsagent.image.tag }}
     dockerProviderVersion: {{ .Values.omsagent.image.dockerProviderVersion }}
@@ -38,7 +38,9 @@ spec:
    {{- end }}
    containers:
      - name: omsagent
-       {{- if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
+       {{- if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>"}}
+       image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
+       {{- else if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
        image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
        {{- else }}
        image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
@@ -47,6 +49,10 @@ spec:
        resources:
 {{ toYaml .Values.omsagent.resources.daemonsetlinux | indent 9 }}
        env:
+       {{- if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>" }}
+       - name: GIG_ENDPOINT
+         value: {{ .Values.omsagent.env.gigendpoint | quote }}
+       {{ end }}
        {{- if ne .Values.omsagent.env.clusterId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.omsagent.env.clusterId | quote }}
@@ -134,7 +140,9 @@ spec:
         timeoutSeconds: 15
    {{- if .Values.omsagent.sidecarscraping }}
      - name: omsagent-prometheus
-       {{- if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
+       {{- if ne .Values.omsagent.env.gigendpoint "<your_gig_endpoint>"}}
+       image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
+       {{- else if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
        image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
        {{- else }}
        image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}

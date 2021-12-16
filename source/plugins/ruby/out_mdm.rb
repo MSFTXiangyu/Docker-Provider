@@ -26,7 +26,7 @@ module Fluent::Plugin
       @@token_resource_audience = "https://monitor.azure.com/"
       @@grant_type = "client_credentials"
       @@azure_json_path = "/etc/kubernetes/host/azure.json"
-      @@post_request_url_template = "https://%{aks_region}.monitoring.azure.com%{aks_resource_id}/metrics"
+      @@post_request_url_template = "http://%{gig_endpoint}%{aks_resource_id}/metrics"
       @@aad_token_url_template = "https://login.microsoftonline.com/%{tenant_id}/oauth2/token"
 
       # msiEndpoint is the well known endpoint for getting MSI authentications tokens
@@ -72,6 +72,7 @@ module Fluent::Plugin
       begin
         aks_resource_id = ENV["AKS_RESOURCE_ID"]
         aks_region = ENV["AKS_REGION"]
+        gig_endpoint = ENV["GIG_ENDPOINT"]
 
         if aks_resource_id.to_s.empty?
           @log.info "Environment Variable AKS_RESOURCE_ID is not set.. "
@@ -88,13 +89,21 @@ module Fluent::Plugin
           aks_region = aks_region.gsub(" ", "")
         end
 
+        if !gig_endpoint.to_s.empty?
+          @log.info "Environment Variable GIG_Endpoint is set. Will send data to MDM.. "
+          @can_send_data_to_mdm = true
+        end
+
         if @can_send_data_to_mdm
           @log.info "MDM Metrics supported in #{aks_region} region"
 
           if aks_resource_id.downcase.include?("microsoft.kubernetes/connectedclusters")
             @isArcK8sCluster = true
           end
-          @@post_request_url = @@post_request_url_template % { aks_region: aks_region, aks_resource_id: aks_resource_id }
+          if !gig_endpoint.to_s.empty?
+            @isArcK8sCluster = true
+          end
+          @@post_request_url = @@post_request_url_template % { aks_region: aks_region, aks_resource_id: aks_resource_id, gig_endpoint: gig_endpoint }
           @post_request_uri = URI.parse(@@post_request_url)
           if (!!@isArcK8sCluster)
             proxy = (ProxyUtils.getProxyConfiguration)
@@ -107,7 +116,7 @@ module Fluent::Plugin
           else
             @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
           end
-          @http_client.use_ssl = true
+          @http_client.use_ssl = false
           @log.info "POST Request url: #{@@post_request_url}"
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMPluginStart", {})
 
@@ -328,7 +337,6 @@ module Fluent::Plugin
         end
         request = Net::HTTP::Post.new(@post_request_uri.request_uri)
         request["Content-Type"] = "application/x-ndjson"
-        request["Authorization"] = "Bearer #{access_token}"
 
         request.body = post_body.join("\n")
         @log.info "REQUEST BODY SIZE #{request.body.bytesize / 1024}"

@@ -20,8 +20,8 @@ Azure:
     proxyCert: ""
 omsagent:
   image:
-    repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod10132021"
+    repo: "xikuantest.azurecr.io/azuremonitorlite"
+    tag: "1.0.1"
     tagWindows: "win-ciprod10132021"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "16.0.0-0"
@@ -57,6 +57,7 @@ omsagent:
     ## Applicable for only managed clusters hosted in Azure
     clusterId: <your_cluster_id>
     clusterRegion: <your_cluster_region>
+    gigendpoint: <your_gig_endpoint>
   rbac: true
   sidecarscraping: true
   logsettings:
