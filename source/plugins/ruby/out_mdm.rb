@@ -33,7 +33,7 @@ module Fluent::Plugin
       # msiEndpoint is the well known endpoint for getting MSI authentications tokens
       @@msi_endpoint_template = "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&client_id=%{user_assigned_client_id}&resource=%{resource}"
       # IMDS msiEndpoint for AAD MSI Auth is the proxy endpoint whcih serves the MSI auth tokens with resource claim
-      @@imds_msi_endpoint_template = "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=%{resource}"
+      @@imds_msi_endpoint_template = "http://127.0.0.1/metadata/identity/oauth2/token?api-version=2018-02-01&resource=%{resource}"
       @@user_assigned_client_id = ENV["USER_ASSIGNED_IDENTITY_CLIENT_ID"]
 
       @@plugin_name = "AKSCustomMetricsMDM"
@@ -74,6 +74,7 @@ module Fluent::Plugin
       begin
         aks_resource_id = ENV["AKS_RESOURCE_ID"]
         aks_region = ENV["AKS_REGION"]
+        gig_endpoint = ENV["GIG_ENDPOINT"]
 
         if aks_resource_id.to_s.empty?
           @log.info "Environment Variable AKS_RESOURCE_ID is not set.. "
@@ -88,6 +89,11 @@ module Fluent::Plugin
           @can_send_data_to_mdm = false
         else
           aks_region = aks_region.gsub(" ", "")
+        end
+
+        if !gig_endpoint.to_s.empty?
+          @log.info "Environment Variable GIG_Endpoint is set. Will send data to MDM.. "
+          @can_send_data_to_mdm = true
         end
 
         @isWindows = isWindows()
@@ -116,8 +122,7 @@ module Fluent::Plugin
             @log.info "Proxy configured on this cluster: #{aks_resource_id}"
             @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port, proxy[:addr], proxy[:port], proxy[:user], proxy[:pass])
           end
-
-          @http_client.use_ssl = true
+          @http_client.use_ssl = false
           @log.info "POST Request url: #{@@post_request_url}"
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMPluginStart", {})
 

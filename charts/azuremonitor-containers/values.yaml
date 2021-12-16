@@ -7,23 +7,59 @@
 ## Values of under Azure are being populated by Azure Arc K8s RP during the installation of the extension
 Azure:
   Cluster:
-    Cloud: <your_cluster_cloud>
-    Region: <your_cluster_region>
-    ResourceId: <your_cluster_id>
+    Cloud: AZUREPUBLICCLOUD
+    Distribution: kind
+    Infrastructure: generic
+    Region: eastus2euap
+    ResourceId: /subscriptions/746a51ba-0bd4-497f-89cc-f955a5db3bc8/resourceGroups/xikuan/providers/Microsoft.Kubernetes/ConnectedClusters/abaaba
   Extension:
-    Name: ""
-    ResourceId: ""
+    Name: azuremonitor-containers
+    ResourceId: /subscriptions/746a51ba-0bd4-497f-89cc-f955a5db3bc8/resourceGroups/xikuan/providers/Microsoft.Kubernetes/ConnectedClusters/abaaba/providers/Microsoft.KubernetesConfiguration/extensions/azuremonitor-containers
+  Identity:
+    MSIAdapterYaml: |
+      - name: EXTENSION_ARMID
+        value: /subscriptions/746a51ba-0bd4-497f-89cc-f955a5db3bc8/resourceGroups/xikuan/providers/Microsoft.Kubernetes/ConnectedClusters/XikuanDevboxK8s13/providers/Microsoft.KubernetesConfiguration/extensions/azuremonitor-containers
+      - name: EXTENSION_NAME
+        value: azuremonitor-containers
+      - name: CLUSTER_IDENTITY
+        value: "false"
+      - name: CLUSTER_TYPE
+        value: ConnectedClusters
+      - name: MANAGED_IDENTITY_AUTH
+        value: "true"
+      - name: TEST_MODE
+        value: "false"
+      - name: TEST_FILE
+        value: "/data/token"
+      image: xikuantest.azurecr.io/imdspoc:1.0.4
+      securityContext:
+        capabilities:
+          add:
+            - NET_ADMIN
+      resources:
+        limits:
+          cpu: 50m
+          memory: 100Mi
+        requests:
+          cpu: 20m
+          memory: 50Mi
+    Type: SystemAssigned
+    isEnabled: true
   proxySettings:
     isProxyEnabled: false
+    isCustomCert: false
     httpProxy: ""
     httpsProxy: ""
     noProxy: ""
     proxyCert: ""
+IdentityPrincipalId: 31b80408-e9dd-4ffb-a06f-fbc4ace48ba4
+IdentityType: SystemAssigned
+logAnalyticsWorkspaceResourceID: /subscriptions/746a51ba-0bd4-497f-89cc-f955a5db3bc8/resourcegroups/xikuan/providers/microsoft.operationalinsights/workspaces/laeuaptest
 omsagent:
   image:
-    repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod03172022"
-    tagWindows: "win-ciprod03172022"
+    repo: "xikuantest.azurecr.io/azuremonitorlite2205"
+    tag: "1.0.0"
+    tagWindows: "win-ciprod10132021"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "16.0.0-0"
     agentVersion: "azure-mdsd-1.17.0"
@@ -47,14 +83,14 @@ omsagent:
   ISTEST: false
 
   # This flag used to determine whether to use AAD MSI auth or not for Arc K8s cluster
-  useAADAuth: false
+  useAADAuth: true
 
   ## To get your workspace id and key do the following
   ## You can create a Azure Loganalytics workspace from portal.azure.com and get its ID & PRIMARY KEY from 'Advanced Settings' tab in the Ux.
 
   secret:
-    wsid: <your_workspace_id>
-    key: <your_workspace_key>
+    wsid: ln87g95aFIA35+d1MTV4a8HMAF700BbvLvPBspAL5P1AGAzrdg5ghPJVadR21lzksCVbZbxZ9zCaJ27WI4vW1g==
+    key: f4dceb37-e140-40ca-82fb-bb85bb19b4a9
   domain: opinsights.azure.com
   proxy: <your_proxy_config>
   env:
@@ -62,6 +98,7 @@ omsagent:
     ## Applicable for only managed clusters hosted in Azure
     clusterId: <your_cluster_id>
     clusterRegion: <your_cluster_region>
+    gigendpoint: <your_gig_endpoint>
   rbac: true
   sidecarscraping: true
   logsettings:
@@ -72,8 +109,8 @@ omsagent:
     custommountpath: ""
 
   arcasettings:
-    isArcACluster: false
-    MetricsEndpoint: <your_metrics_endpoint>
+    isArcACluster: true
+    MetricsEndpoint: n25r0305-Xrp01.n25r0305.masd.stbtest.microsoft.com:30402
 
   ## Configure node tolerations for scheduling onto nodes with taints
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/

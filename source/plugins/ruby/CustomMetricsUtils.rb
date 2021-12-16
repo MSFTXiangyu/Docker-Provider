@@ -18,7 +18,7 @@ class CustomMetricsUtils
                 return true
             end
 
-            return aks_cloud_environment.to_s.downcase == 'azurepubliccloud'
+            return true
         end
     end
 end
