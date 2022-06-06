@@ -94,7 +94,7 @@ spec:
          value: {{ .Values.omsagent.isArcACluster | quote }}
        {{- end }}
        {{- if ne .Values.omsagent.metricsEndpoint "<your_metrics_endpoint>" }}
-       - name: Custom_Metrics_Endpoint
+       - name: CUSTOM_METRICS_ENDPOINT
          value: {{ .Values.omsagent.metricsEndpoint | quote }}
        {{- end }}
        securityContext:

@@ -14,8 +14,8 @@ class CustomMetricsUtils
                 return false # This will also take care of AKS-Engine Scenario. AKS_REGION/AKS_RESOURCE_ID is not set for AKS-Engine. Only ACS_RESOURCE_NAME is set
             end
             # If this is cluster is connected to ArcA control plane and metrics endpoint provided, custom metrics shall be emitted.
-            is_ArcA_Cluster = ENV['IS_ARCA_CLUSTER']
-            if is_ArcA_Cluster.to_s.downcase == "true" && !ENV['Custom_Metrics_Endpoint'].to_s.empty?
+            is_arca_cluster = ENV['IS_ARCA_CLUSTER']
+            if is_arca_cluster.to_s.downcase == "true" && !ENV['CUSTOM_METRICS_ENDPOINT'].to_s.empty?
                 return true
             end
 

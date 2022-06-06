@@ -26,8 +26,8 @@ module Fluent::Plugin
       @@token_resource_audience = "https://monitor.azure.com/"
       @@grant_type = "client_credentials"
       @@azure_json_path = "/etc/kubernetes/host/azure.json"
-      @@public_metrics_endpoint_template = "%{aks_region}.monitoring.azure.com"
-      @@post_request_url_template = "https://%{metrics_endpoint}%{aks_resource_id}/metrics"
+      @@public_metrics_endpoint_template = "https://%{aks_region}.monitoring.azure.com"
+      @@post_request_url_template = "%{metrics_endpoint}%{aks_resource_id}/metrics"
       @@aad_token_url_template = "https://login.microsoftonline.com/%{tenant_id}/oauth2/token"
 
       # msiEndpoint is the well known endpoint for getting MSI authentications tokens
@@ -100,15 +100,11 @@ module Fluent::Plugin
             @isArcK8sCluster = true
           end
 
-          # If Custom_Metrics_Endpoint provided, the url format shall be validated before emitting metrics into given endpoint.
-          Custom_Metrics_Endpoint = ENV['Custom_Metrics_Endpoint']
-          if !Custom_Metrics_Endpoint.to_s.empty?
-            metrics_endpoint = Custom_Metrics_Endpoint.lstrip.rstrip
-            if !valid_url?(metrics_endpoint)
-              invalid_url_message = "The Custom_Metrics_Endpoint (#{Custom_Metrics_Endpoint}) from environment vaiable is invalid."
-              @log.warn invalid_url_message
-              raise invalid_url_message
-            end
+          # If CUSTOM_METRICS_ENDPOINT provided, the url format shall be validated before emitting metrics into given endpoint.
+          custom_metrics_endpoint = ENV['CUSTOM_METRICS_ENDPOINT']
+          if !custom_metrics_endpoint.to_s.empty?
+            metrics_endpoint = custom_metrics_endpoint.strip
+            URI.parse(metrics_endpoint)
           else
             metrics_endpoint = @@public_metrics_endpoint_template % { aks_region: aks_region }
           end
@@ -421,15 +417,6 @@ module Fluent::Plugin
         @log.warn "Error in MDM isWindows method: #{error}"
       end
       return isWindows
-    end
-
-    def valid_url?(string)
-      uri = URI.parse(string)
-      %w( http https ).include?(uri.scheme)
-    rescue URI::BadURIError
-      false
-    rescue URI::InvalidURIError
-      false
     end
   end # class OutputMDM
 end # module Fluent
